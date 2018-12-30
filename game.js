@@ -1,0 +1,234 @@
+can=document.getElementById("c")
+var ctx = can.getContext('2d');
+ctx.fillStyle = 'green';
+
+counter =0;
+max_counter =10;
+slow_on=0;
+gravity =1;
+gravity_on =1;
+friction =0.75;
+air_friction =0.5;
+playerRow =0;
+playerCol =0;
+hittable=0;
+lastRow = 0;
+lastCol = 0;
+
+platform ={
+    x:50,
+    y:250,
+    w:250,
+    h:10,
+    draw:function(){
+        ctx.fillRect( this.x, this.y,this.w, this.h);
+    },
+}
+/*
+function collide(player,platform){
+    if(player.x > platform.x && player.x < platform.x + platform.w
+       && player.y + player.h > platform.y && player.y +player.h < platform.y + platform.h ){
+        player.onground=1;
+        player.yv=0;
+    } else {
+        player.onground = 0;
+    }
+}
+*/
+player = {
+    x:10,
+    y:10,
+    w:16,
+    h:16,
+    xv:0,
+    yv:0,
+    max_xv:4,
+    max_yv:9,
+    onground:0,
+    jumpStrength:-8,
+    falling:1,
+    draw:function(){
+        ctx.fillRect( this.x, this.y,this.w, this.h);
+    },
+    update:function(){
+        lastCol = playerCol;
+        lastRow = playerRow;
+        
+        get_grid_pos(this.x,this.y);
+        
+        hittable = get_hittable(playerRow,playerCol);
+       
+       //if(this.onground && !hittable){
+		//   this.onground=0;
+	   //}
+       
+        if(hittable && this.yv>0 && !this.onground){
+			this.xv=0;
+		    this.yv=0;
+		    this.x=lastCol*tileDim;
+		    this.y=lastRow*tileDim;
+		    this.onground=1;
+		    this.falling=0;
+		}
+		
+		
+       /*
+        dbg.innerHTML='';
+        dbg.innerHTML+='x:'+this.x +'<br>';
+        dbg.innerHTML+='y:'+this.y+'<br>';
+        dbg.innerHTML+='xv:'+ Math.round( this.xv*100 )/100 +'<br>';
+        dbg.innerHTML+='yv:'+ Math.round( this.yv*100 )/100+'<br>';
+        dbg.innerHTML+='row:'+playerRow +'<br>';
+        dbg.innerHTML+='col:'+playerCol+'<br>';
+		dbg.innerHTML+='hittable:'+hittable+'<br>';
+		dbg.innerHTML+='falling:'+this.falling+'<br>';
+       dbg.innerHTML+='onground:'+this.onground+'<br>';
+       */
+        this.x=Math.floor(this.x+this.xv);
+        this.y=Math.floor(this.y+this.yv);
+        
+        //reset player at boundries
+        if(this.x>can.width)this.x=0;
+        if(this.y>can.height)this.y=0;
+        if(this.x<0)this.x=can.width;
+        if(this.y<0)this.y=can.height;
+        if(gravity_on){
+            if(!this.onground){
+                this.yv =this.yv+gravity;
+            } else {
+				this.yv =0;
+                this.xv = this.xv * friction;
+            }
+        } else {
+            //this.yv = Math.floor(this.yv * air_friction);
+            //this.xv = Math.floor(this.xv * air_friction);
+            this.yv = (this.yv * air_friction);
+            this.xv = (this.xv * air_friction);
+        }
+        
+        if(this.yv > this.max_yv){
+            this.yv = this.max_yv;
+        }
+        if(this.yv < this.max_yv - this.max_yv*2){
+            this.yv = this.max_yv - this.max_yv*2;
+        } 
+        if(this.xv > this.max_xv){
+            this.xv = this.max_xv;
+        }
+        if(this.xv < this.max_xv - this.max_xv*2){
+            this.xv = this.max_xv - this.max_xv*2;
+        }
+        if(Math.abs(this.xv) < 0.5){
+			this.xv=0;
+		}
+		if(Math.abs(this.yv) < 0.5){
+			this.yv=0;
+		}       
+    }, 
+};
+   
+keyboard={};   
+document.onkeydown=function(evt){
+    switch(evt.keyCode){
+        case 37:
+        keyboard.LEFT=1;
+        break;
+        case 38:
+        keyboard.UP=1;
+        break;
+        case 39:
+        keyboard.RIGHT=1;
+        break;
+        case 40:
+        keyboard.DOWN=1;
+        break;
+    }   
+}
+   
+document.onkeyup=function(evt){
+    switch(evt.keyCode){
+        case 37:
+        keyboard.LEFT=0;
+        break;
+        case 38:
+        keyboard.UP=0;
+        break;
+        case 39:
+        keyboard.RIGHT=0;
+        break;
+        case 40:
+        keyboard.DOWN=0;
+        break;
+    }   
+}
+
+function pollKeyboard(){
+    if(keyboard.UP){ //jumping code
+        if(gravity_on){
+            if(player.onground){
+                player.yv = player.jumpStrength;
+                player.onground=0;
+            }
+        }else{
+            player.yv-=1;
+        }
+    }
+    if(keyboard.DOWN){
+        player.yv+=1;
+    }
+    if(keyboard.RIGHT){
+        player.xv+=1;
+    }
+    if(keyboard.LEFT){
+        player.xv-=1;
+    }
+}
+
+function gameloop(){
+	t0 = performance.now();
+    if(counter < max_counter && slow_on) {
+        counter +=1;
+    } else {
+        counter=0;
+    ctx.clearRect(0,0,can.width, can.height);
+    draw_world();
+    pollKeyboard();
+    player.update();
+    //collide(player,platform);
+    highlight_grid_pos(playerRow,playerCol);
+    //platform.draw();
+    player.draw();
+    }
+    t1 = performance.now();
+    console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");   
+    ctx.fillText(Math.round((t1 - t0))+ " ms", 10, 10);
+    //draw_fps();
+    
+    window.requestAnimationFrame(gameloop);
+}
+
+window.requestAnimationFrame(gameloop);
+
+highlight_grid_pos = function(x,y){
+    ctx.strokeStyle='white';
+    ctx.strokeRect(y*tileDim,x*tileDim,tileDim,tileDim);
+}
+
+get_grid_pos = function(x,y){
+	playerCol = Math.floor((x+tileDim/2)/tileDim);
+	playerRow = Math.floor((y+tileDim/2)/tileDim);
+}
+
+get_hittable = function(row,col){
+	if ( world[row]) {
+		return world[row][col];
+	}
+}
+last_time=0;
+
+function draw_fps(){
+	time = performance.now();
+	delta_time = Math.round(time - last_time);
+	last_time = time;
+	ctx.fillText(delta_time, 10, 10);
+}
