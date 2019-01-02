@@ -14,7 +14,7 @@ max_counter =10;
 slow_on=0;
 gravity =1;
 gravity_on =1;
-friction =0.65;
+friction =0.55;
 air_friction =0.95;
 playerRow =0;
 playerCol =0;
@@ -23,6 +23,18 @@ lastRow = 0;
 lastCol = 0;
 
 guys=3;
+
+get_enemy_grid_pos = function(x,y){
+	enemyCol = Math.floor((x+tileDim/2)/tileDim);
+	enemyRow = Math.floor((y+tileDim/2)/tileDim);
+	//debug('playerCol:'+playerCol+', playerRow:'+playerRow);
+}
+
+get_hittable = function(row,col){
+	if ( world[row]) {
+		return world[row][col];
+	}
+}
 
 platform ={
     x:50,
@@ -58,6 +70,7 @@ function collide(player, enemy){
     } 
 }
 
+/*
 enemy = {
 	x:10*tileDim,
 	y:13*tileDim,
@@ -66,10 +79,10 @@ enemy = {
 	xv:-1,
 	yv:0,
 	dead:0,
-	fillStyle:'red',
+	fillStyle:'blue',
 	draw:function(){
 		if(!this.dead){
-		ctx.fillStyle = 'red';
+		ctx.fillStyle = 'blue';
         ctx.fillRect( this.x, this.y,this.w, this.h);
 		}
     },
@@ -103,6 +116,95 @@ enemy = {
         
 	},
 	};
+*/
+
+
+enemies = [];
+
+make_enemies = function(){
+	
+enemies.push( actor(function(){
+		this.o.x=Math.floor(this.o.x+this.o.xv); //integer-only coordinates
+        this.o.y=Math.floor(this.o.y+this.o.yv);
+        get_enemy_grid_pos(this.o.x,this.o.y);
+        var left_hittable = get_hittable(enemyRow,enemyCol-1);
+       if(left_hittable){
+		   //this.x=lastCol*tileDim;
+		   if(this.o.x+this.o.xv<=enemyCol*tileDim){
+			this.o.xv*=-1;
+			//this.x = lastCol*tileDim;
+			this.o.x = enemyCol*tileDim;
+		   }
+	   }
+	   var right_hittable = get_hittable(enemyRow,enemyCol+1);
+       if(right_hittable){
+		   //this.x=lastCol*tileDim;
+		   if(this.o.x+this.o.xv>=enemyCol*tileDim){
+			this.o.xv*=-1;
+			//this.x = lastCol*tileDim;
+			this.o.x = enemyCol*tileDim;
+		   }
+	   }
+	},
+{
+	x:10*tileDim,
+	y:13*tileDim,
+	w:tileDim,
+	h:tileDim,
+	dead:0,
+	xv:-1,
+	yv:0,
+	draw:function(){
+		if(!this.dead){
+		ctx.fillStyle = 'blue';
+        ctx.fillRect( this.x, this.y,this.w, this.h);
+		}
+		},	
+},50).run());
+
+
+enemies.push( actor(function(){
+		this.o.x=Math.floor(this.o.x+this.o.xv); //integer-only coordinates
+        this.o.y=Math.floor(this.o.y+this.o.yv);
+        get_enemy_grid_pos(this.o.x,this.o.y);
+        var left_hittable = get_hittable(enemyRow,enemyCol-1);
+       if(left_hittable){
+		   //this.x=lastCol*tileDim;
+		   if(this.o.x+this.o.xv<=enemyCol*tileDim){
+			this.o.xv*=-1;
+			//this.x = lastCol*tileDim;
+			this.o.x = enemyCol*tileDim;
+		   }
+	   }
+	   var right_hittable = get_hittable(enemyRow,enemyCol+1);
+       if(right_hittable){
+		   //this.x=lastCol*tileDim;
+		   if(this.o.x+this.o.xv>=enemyCol*tileDim){
+			this.o.xv*=-1;
+			//this.x = lastCol*tileDim;
+			this.o.x = enemyCol*tileDim;
+		   }
+	   }
+	},
+{
+	x:9*tileDim,
+	y:13*tileDim,
+	w:tileDim,
+	h:tileDim,
+	dead:0,
+	xv:1,
+	yv:0,
+	draw:function(){
+		if(!this.dead){
+		ctx.fillStyle = 'blue';
+        ctx.fillRect( this.x, this.y,this.w, this.h);
+		}
+		},	
+},2).run());
+
+}
+
+make_enemies();
 
 player = {
     x:14*tileDim,
@@ -113,7 +215,8 @@ player = {
     yv:0,
     max_xv:4,
     min_xv:-4,
-    max_yv:20,
+    max_yv:30,
+    min_yv:-30,
     onground:0,
     jumpStrength:-10,
     falling:1,
@@ -130,17 +233,21 @@ player = {
         
         down_hittable = get_hittable(playerRow+1,playerCol);
        
-       right_hittable = get_hittable(playerRow,playerCol+1);
+        right_hittable = get_hittable(playerRow,playerCol+1);
        
-       if(right_hittable){
+       left_hittable = get_hittable(playerRow,playerCol-1);
+       
+       up_hittable = get_hittable(playerRow-1,playerCol);
+       
+        if(right_hittable){
 		   //this.x=lastCol*tileDim;
 		   if(this.x+this.xv>=playerCol*tileDim){
 			this.xv=0;
 			this.x = playerCol*tileDim;
 		   }
-	   }
+	    }
        
-       left_hittable = get_hittable(playerRow,playerCol-1);
+       
        
        if(left_hittable){
 		   //this.x=lastCol*tileDim;
@@ -151,7 +258,7 @@ player = {
 		   }
 	   }
        
-       up_hittable = get_hittable(playerRow-1,playerCol);
+       
        
        if(up_hittable){
 		   //this.x=lastCol*tileDim;
@@ -166,35 +273,7 @@ player = {
 			}
 	   }
        
-       
-       /*
-       upleft_hittable = get_hittable(playerRow-1,playerCol-1);
-       
-       if(upleft_hittable && !this.onground){
-		   //this.x=lastCol*tileDim;
-		   if(this.y+this.yv<=(playerRow)*tileDim && this.x+this.xv<=playerCol*tileDim){
-			this.yv=0;
-			this.xv=0;
-			//this.x = lastCol*tileDim;
-			//this.y = playerRow*tileDim;
-			//this.x = playerCol*tileDim;
-		   }
-	   }
-       
-       upright_hittable = get_hittable(playerRow-1,playerCol+1);
-       
-       if(upright_hittable &&!this.onground){
-		   //this.x=lastCol*tileDim;
-		   if(this.y+this.yv<=(playerRow)*tileDim && this.x+this.xv>=playerCol*tileDim){
-			this.yv=0;
-			this.xv=0;
-			//this.x = lastCol*tileDim;
-			//this.y = playerRow*tileDim;
-			//this.x = playerCol*tileDim;
-		   }
-	   }
-       */
-        if(down_hittable && this.yv>0 && !this.onground){
+       if(down_hittable && this.yv>0 && !this.onground){
 			
 		    //this.yv=0;
 		    //this.x=lastCol*tileDim;
@@ -209,6 +288,68 @@ player = {
 			}
 		    
 		}
+       
+       
+       
+       upleft_hittable = get_hittable(playerRow-1,playerCol-1);
+       
+       if(upleft_hittable && !this.onground){
+		   //this.x=lastCol*tileDim;
+		   if(this.y+this.yv<=(playerRow)*tileDim && this.x+this.xv<=playerCol*tileDim){
+			//this.yv=0;
+			//this.xv=0;
+			//this.x = lastCol*tileDim;
+			//this.y = playerRow*tileDim;
+			//this.x = playerCol*tileDim;
+		   }
+	   }
+       
+       upright_hittable = get_hittable(playerRow-1,playerCol+1);
+       
+       if(upright_hittable && !this.onground){
+		   //this.x=lastCol*tileDim;
+		   if(this.y+this.yv<=(playerRow)*tileDim && this.x+this.xv>=playerCol*tileDim){
+			//this.yv=0;
+			this.xv=0;
+			//this.x = lastCol*tileDim;
+			//this.y = playerRow*tileDim;
+			//this.x = playerCol*tileDim;
+		   }
+	   }
+	   
+	   
+	   downright_hittable = get_hittable(playerRow+1,playerCol+1);
+       if(downright_hittable &&!this.onground){
+		   if(this.y+this.h+this.yv>(playerRow+1)*tileDim && this.x+this.w+this.xv>(playerCol+1)*tileDim){
+			if(this.xv>0){
+				this.x = ((playerCol+1)*tileDim)-(tileDim/4);
+				this.onground=1;
+				this.y = (playerRow)*tileDim;
+				this.yv = 0;
+				//this.xv=0;
+			}
+		   }
+	   }
+	   
+	   
+	   downleft_hittable = get_hittable(playerRow+1,playerCol-1);
+       if(downleft_hittable &&!this.onground){
+		   console.log('downleft');
+		   //this.x=lastCol*tileDim;
+		   if(this.y+this.h+this.yv>(playerRow+1)*tileDim && this.x+this.xv<(playerCol)*tileDim){
+			   console.log('downleft hit');
+			   if(this.xv<0){
+				   this.xv=0;
+				this.x = ((playerCol-1)*tileDim)+(tileDim/4);
+				this.onground=1;
+				this.y = (playerRow)*tileDim;
+				this.yv = 0;
+			}
+		   }
+	   }  
+	    
+       
+        
 		
 		
 		if(this.onground && !down_hittable){
@@ -230,8 +371,8 @@ player = {
 		dbg.innerHTML+='falling:'+this.falling+'<br>';
        dbg.innerHTML+='onground:'+this.onground+'<br>';
        */
-        this.x=Math.floor(this.x+this.xv);
-        this.y=Math.floor(this.y+this.yv);
+        this.x=Math.round(this.x+this.xv);
+        this.y=Math.round(this.y+this.yv);
         
         //reset player at boundries
         if(this.x>can.width)this.x=0;
@@ -262,25 +403,29 @@ player = {
         
         
         //limit player velocity
+        
         if(this.yv > this.max_yv){
             this.yv = this.max_yv;
         }
-        if(this.yv < this.max_yv - this.max_yv*2){
-            this.yv = this.max_yv - this.max_yv*2;
+        if(this.yv < this.min_yv){
+            this.yv = this.min_yv;
         } 
-        if(this.xv > this.max_xv){
+        if(this.xv >= this.max_xv){
             this.xv = this.max_xv;
         }
-        if(this.xv < this.min_xv){
+        if(this.xv <= this.min_xv){
             this.xv = this.min_xv;
         }
+        
         //at a certain speed, set to 0
+        /*
         if(Math.abs(this.xv) < 0.15){
 			this.xv=0;
 		}
 		if(Math.abs(this.yv) < 0.15){
 			this.yv=0;
-		}     
+		} 
+		*/     
 		if(this.jumping){
 			if(this.yv>=0){
 				this.jumping=0;
@@ -342,10 +487,7 @@ function pollKeyboard(){
         player.yv+=1;
     }
     if(keyboard.RIGHT){
-		
-		
         player.xv+=1;
-		
     }
     if(keyboard.LEFT){
 		
@@ -365,14 +507,26 @@ function gameloop(){
     pollKeyboard();
     player.update();
     //collide(player,platform);
-    enemy.update();
-    if(!enemy.dead){
-		collide(player,enemy);
+    //enemy.update();
+    
+    
+    //if(!enemy1.o.dead){
+	//	collide(player,enemy1.o);
+	//}
+	
+	for(x in enemies){
+		if(!enemies[x].o.dead){
+		collide(player,enemies[x].o);
+		enemies[x].o.draw();
+		}
 	}
+	
     highlight_grid_pos(playerRow,playerCol);
     //platform.draw();
     player.draw();
-    enemy.draw();
+    
+    //enemy1.o.draw();
+    
     }
     t1 = performance.now();
     //console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");   
@@ -391,22 +545,14 @@ highlight_grid_pos = function(x,y){
 }
 
 get_grid_pos = function(x,y){
+	lastCol = playerCol;
+	lastRow = playerRow;
 	playerCol = Math.floor((x+tileDim/2)/tileDim);
 	playerRow = Math.floor((y+tileDim/2)/tileDim);
 	//debug('playerCol:'+playerCol+', playerRow:'+playerRow);
 }
 
-get_enemy_grid_pos = function(x,y){
-	enemyCol = Math.floor((x+tileDim/2)/tileDim);
-	enemyRow = Math.floor((y+tileDim/2)/tileDim);
-	//debug('playerCol:'+playerCol+', playerRow:'+playerRow);
-}
 
-get_hittable = function(row,col){
-	if ( world[row]) {
-		return world[row][col];
-	}
-}
 last_time=0;
 
 do_die = function(){
